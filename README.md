@@ -1,6 +1,14 @@
 # Overview
 This repository contains all the code needed to complete the final project for the Localization course in Udacity's Self-Driving Car Nanodegree.
 
+[//]: # (Image References)
+
+[init]:./images/init.png "initial start"
+[step1280]:./images/step1280.png "Step"
+[final]:./images/success.png "Step"
+
+
+
 #### Submission
 All you will submit is your completed version of `particle_filter.cpp`, which is located in the `src` directory. You should probably do a `git pull` before submitting to verify that your project passes the most up-to-date version of the grading code (there are some parameters in `src/main.cpp` which govern the requirements on accuracy and run time.)
 
@@ -8,6 +16,44 @@ All you will submit is your completed version of `particle_filter.cpp`, which is
 Your robot has been kidnapped and transported to a new location! Luckily it has a map of this location, a (noisy) GPS estimate of its initial location, and lots of (noisy) sensor and control data.
 
 In this project you will implement a 2 dimensional particle filter in C++. Your particle filter will be given a map and some initial localization information (analogous to what a GPS would provide). At each time step your filter will also get observation and control data.
+
+## My Implementation 
+Based on instruction to ask for change only 2 logic files particle_filter.h and particle_filter.cpp, I have added and implemented main program methodology so that prediction x and y are generaged with minimum loss from the real data. 
+
+### 1. Initialize all paratices 
+Initialize all uncertain particles (=particle number is set to 100) with having Gaussian noize which is set as default range (=standard devition). Set particle weight to 1 as default one.
+
+### 2. Prediction based on measurements
+Add measurements to all partices. Input parameters are yaw_rate, velocity, standard deviation for x,y,theta and delta time.
+Within slight time span, partices x, y and theta are calculated with input parameters, but x and y of particles are straightly calulcated with cos(theta) or sin(theta) respecively if yaw_rate is close to ZERO.
+Also, noise based on the entered standard deviation are added to particles x, y and theta.
+
+### 3. dataAssociation
+It is very easy process to select most nearest distance between observation and predicton coordination.
+Once shortest distance is found, map id is preserved into observation id.
+
+### 4. updatesWeights
+It is main program logic to calculate probability for each particles from transformed observations and predicted landmarks. The transformed observations are generated with Vehicles coordinate system.
+Finally, each particle probability come up from multi variate Gaussian distribution.
+
+### 5. Resampling
+As a final step, generated partilcles are selected with resampling process (=wheel process.)
+
+### How Error numbers are changed during the course of running program.
+
+__[Initial Step]__ \
+This image is initial starting image before pressing start button.
+![alt text][init]
+
+__[Middle Step]__ \
+This image is at step 1280 where x/y/yaw error rate is displayed as very low numbers.
+![alt text][step1280]
+
+__[Final Step]__
+This image is at Final step where x/y/yaw error rate are not dramtically changed from step 1280, where those still shows reasonable error figures to narrow the real x y coordinates.
+![alt text][final]
+
+
 
 ## Running the Code
 This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases)

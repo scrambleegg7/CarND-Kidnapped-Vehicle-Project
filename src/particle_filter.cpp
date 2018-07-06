@@ -27,7 +27,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
-	num_particles = 50;
+	num_particles = 100;
 	default_random_engine gen;
 	
 	// set distribution for input data. 
@@ -63,38 +63,35 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
 	default_random_engine gen;
-	
+
+	normal_distribution<double> dist_x(0, std_pos[0]);
+	normal_distribution<double> dist_y(0, std_pos[1]);
+	normal_distribution<double> dist_theta(0, std_pos[2]);
+
+
 	int i;
 	for (i = 0; i < num_particles; i++) {
-	  double particle_x = particles[i].x;
-	  double particle_y = particles[i].y;
-	  double particle_theta = particles[i].theta;
-	 
-	  double pred_x;
-	  double pred_y;
-	  double pred_theta;
-	  //Instead of a hard check of 0, adding a check for very low value of yaw_rate
-	  if (fabs(yaw_rate) < EPS) {
 
-		pred_x = particle_x + velocity * cos(particle_theta) * delta_t;
-		pred_y = particle_y + velocity * sin(particle_theta) * delta_t;
-		pred_theta = particle_theta;
-	  
-	  } else {
+		double particle_theta = particles[i].theta;
 
-	    pred_x = particle_x + (velocity/yaw_rate) * (sin(particle_theta + (yaw_rate * delta_t)) - sin(particle_theta));
-	    pred_y = particle_y + (velocity/yaw_rate) * (cos(particle_theta) - cos(particle_theta + (yaw_rate * delta_t)));
-	    pred_theta = particle_theta + (yaw_rate * delta_t);
+		//Instead of a hard check of 0, adding a check for very low value of yaw_rate
+		if (fabs(yaw_rate) < EPS) {
 
-	  }
-	  
-	  normal_distribution<double> dist_x(pred_x, std_pos[0]);
-	  normal_distribution<double> dist_y(pred_y, std_pos[1]);
-	  normal_distribution<double> dist_theta(pred_theta, std_pos[2]);
-	  
-	  particles[i].x = dist_x(gen);
-	  particles[i].y = dist_y(gen);
-	  particles[i].theta = dist_theta(gen);
+			particles[i].x += velocity * cos(particle_theta) * delta_t;
+			particles[i].y += velocity * sin(particle_theta) * delta_t;
+
+		} else {
+
+			particles[i].x += (velocity/yaw_rate) * (sin(particle_theta + (yaw_rate * delta_t)) - sin(particle_theta));
+			particles[i].y += (velocity/yaw_rate) * (cos(particle_theta) - cos(particle_theta + (yaw_rate * delta_t)));
+			particles[i].theta += (yaw_rate * delta_t);
+
+		}
+
+		// add noise based on entered standard deviation.
+		particles[i].x += dist_x(gen);
+		particles[i].y += dist_y(gen);
+		particles[i].theta += dist_theta(gen);
 
 	}
 
@@ -159,7 +156,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 
 	// 
-	double weight_normalizer = 0.0;
+	//double weight_normalizer = 0.0;
 	// loop number of particles
 	for (int i=0;i<num_particles;i++) {
 
@@ -257,16 +254,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 			}
 		}
-    	weight_normalizer += particles[i].weight;
+    	//weight_normalizer += particles[i].weight;
 
 	// end of particles loop..
 	}
 
-	/* Final Step  Normalize the weights.*/
-	for (int i = 0; i < particles.size(); i++) {
-		particles[i].weight /= weight_normalizer;
-		weights[i] = particles[i].weight;
-	}
 
 
 }
@@ -277,10 +269,12 @@ void ParticleFilter::resample() {
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
 
-	//for (int i=0;i<num_particles;i++) {
-	//	weights.push_back(  particles[i].weight   );
-	//}
 
+	/* copy weights from particle weights */
+	for (int i = 0; i < particles.size(); i++) {
+		//particles[i].weight /= weight_normalizer;
+		weights[i] = particles[i].weight;
+	}
 
 	double max_weight = *std::max_element(weights.begin(), weights.end());
 	double max_weight2 = 2.0 * max_weight;
@@ -326,6 +320,8 @@ Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<i
     particle.associations= associations;
     particle.sense_x = sense_x;
     particle.sense_y = sense_y;
+
+	return particle;
 }
 
 string ParticleFilter::getAssociations(Particle best)
